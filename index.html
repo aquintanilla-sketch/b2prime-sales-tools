@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B2Prime — Sales Compliance Navigator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f5f3; --surface: #fff; --border: rgba(0,0,0,0.11); --border-mid: rgba(0,0,0,0.22);
+    --text: #1a1a1a; --text-sec: #5a5a5a; --text-hint: #999;
+    --blue: #185FA5; --blue-bg: #E6F1FB;
+    --green: #3B6D11; --green-bg: #EAF3DE; --green-border: #97C459;
+    --amber: #633806; --amber-bg: #FAEEDA; --amber-border: #EF9F27;
+    --red: #791F1F; --red-bg: #FCEBEB; --red-border: #F09595;
+    --r: 12px; --rs: 8px;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem 4rem; }
+  .shell { width: 100%; max-width: 660px; }
+  .header { display: flex; align-items: center; gap: 12px; margin-bottom: 2rem; }
+  .logo { width: 36px; height: 36px; background: var(--blue); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .logo svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .header-text h1 { font-size: 16px; font-weight: 600; }
+  .header-text p { font-size: 12px; color: var(--text-hint); margin-top: 1px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 2rem; margin-bottom: 1rem; }
+  .prog-track { height: 3px; background: var(--border); border-radius: 2px; margin-bottom: 2rem; overflow: hidden; }
+  .prog-fill { height: 100%; background: var(--blue); border-radius: 2px; transition: width 0.4s ease; }
+  .step-lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-hint); margin-bottom: 6px; }
+  .q { font-size: 20px; font-weight: 600; line-height: 1.35; margin-bottom: 6px; }
+  .qsub { font-size: 14px; color: var(--text-sec); margin-bottom: 1.75rem; line-height: 1.5; }
+  .options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 1.5rem; }
+  .opt { display: flex; align-items: flex-start; gap: 14px; padding: 12px 16px; border: 1px solid var(--border); border-radius: var(--rs); background: var(--surface); cursor: pointer; text-align: left; transition: border-color 0.15s, background 0.15s; width: 100%; }
+  .opt:hover, .opt.sel { border-color: var(--blue); background: var(--blue-bg); }
+  .opt-ic { font-size: 22px; flex-shrink: 0; line-height: 1; margin-top: 1px; }
+  .opt-t { font-size: 14px; font-weight: 600; color: var(--text); }
+  .opt-d { font-size: 12px; color: var(--text-sec); margin-top: 2px; line-height: 1.4; }
+  .multi-hint { font-size: 12px; color: var(--text-hint); margin-bottom: 10px; }
+  .sel-count { font-size: 12px; font-weight: 500; color: var(--blue); margin-bottom: 10px; min-height: 18px; }
+  .txt { width: 100%; font-size: 15px; padding: 11px 14px; border: 1px solid var(--border-mid); border-radius: var(--rs); background: var(--surface); color: var(--text); outline: none; margin-bottom: 1.5rem; font-family: inherit; }
+  .txt:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(24,95,165,0.1); }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-back { font-size: 14px; font-family: inherit; padding: 10px 20px; border: 1px solid var(--border-mid); border-radius: var(--rs); background: transparent; color: var(--text-sec); cursor: pointer; }
+  .btn-back:hover { background: var(--bg); }
+  .btn-next { font-size: 14px; font-weight: 600; font-family: inherit; padding: 10px 24px; border: 1px solid var(--blue); border-radius: var(--rs); background: var(--blue); color: #fff; cursor: pointer; }
+  .btn-next:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-next:not(:disabled):hover { opacity: 0.88; }
+  .crumb-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 1.25rem; }
+  .crumb { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; background: var(--bg); border: 1px solid var(--border); color: var(--text-sec); }
+  .verdict { display: flex; align-items: flex-start; gap: 14px; padding: 16px 20px; border-radius: var(--rs); margin-bottom: 1.25rem; border: 1px solid; }
+  .verdict.green { background: var(--green-bg); border-color: var(--green-border); }
+  .verdict.amber { background: var(--amber-bg); border-color: var(--amber-border); }
+  .verdict.red { background: var(--red-bg); border-color: var(--red-border); }
+  .vi { font-size: 22px; flex-shrink: 0; line-height: 1; margin-top: 1px; }
+  .vt { font-size: 16px; font-weight: 600; }
+  .verdict.green .vt { color: var(--green); }
+  .verdict.amber .vt { color: var(--amber); }
+  .verdict.red .vt { color: var(--red); }
+  .vs { font-size: 13px; margin-top: 3px; line-height: 1.45; }
+  .verdict.green .vs { color: #3B6D11; }
+  .verdict.amber .vs { color: #854F0B; }
+  .verdict.red .vs { color: #A32D2D; }
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--rs); margin-bottom: 8px; overflow: hidden; }
+  .sec-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text); user-select: none; }
+  .sec-head:hover { background: var(--bg); }
+  .sec-arr { color: var(--text-hint); transition: transform 0.2s; font-size: 10px; }
+  .sec-arr.open { transform: rotate(90deg); }
+  .sec-body { border-top: 1px solid var(--border); display: none; }
+  .sec-body.open { display: block; }
+  .ri { display: flex; gap: 10px; padding: 9px 16px; border-bottom: 1px solid var(--border); }
+  .ri:last-child { border-bottom: none; }
+  .rd { width: 7px; height: 7px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+  .dg { background: #639922; } .da { background: #BA7517; } .dr { background: #E24B4A; }
+  .rt { font-size: 13px; color: var(--text-sec); line-height: 1.55; }
+  .rt a { color: var(--blue); text-decoration: none; }
+  .rt a:hover { text-decoration: underline; }
+  /* product grid in results */
+  .prod-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 12px 16px; }
+  .prod-pill { display: flex; align-items: center; gap: 7px; padding: 7px 10px; border-radius: var(--rs); border: 1px solid; font-size: 12px; font-weight: 500; }
+  .prod-pill.ok { background: var(--green-bg); border-color: var(--green-border); color: var(--green); }
+  .prod-pill.warn { background: var(--amber-bg); border-color: var(--amber-border); color: var(--amber); }
+  .prod-pill.blk { background: var(--red-bg); border-color: var(--red-border); color: var(--red); }
+  .prod-pill-ic { font-size: 14px; flex-shrink: 0; }
+  .prod-pill-label { flex: 1; line-height: 1.3; }
+  .prod-pill-badge { font-size: 10px; font-weight: 600; letter-spacing: 0.03em; white-space: nowrap; }
+  .prod-note { font-size: 12px; color: var(--text-sec); padding: 0 16px 12px; line-height: 1.5; border-top: 1px solid var(--border); margin-top: 4px; padding-top: 10px; }
+  .btn-restart { margin-top: 1.25rem; font-size: 13px; font-family: inherit; padding: 9px 20px; border: 1px solid var(--border-mid); border-radius: var(--rs); background: transparent; color: var(--text-sec); cursor: pointer; }
+  .btn-restart:hover { background: var(--bg); }
+  .ranim { animation: fu 0.3s ease; }
+  @keyframes fu { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .footer { margin-top: 2rem; font-size: 11px; color: var(--text-hint); text-align: center; line-height: 1.6; }
+  @media (max-width: 500px) { .card { padding: 1.25rem; } .q { font-size: 17px; } .prod-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="header">
+    <div class="logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
+    <div class="header-text">
+      <h1>B2Prime Sales Compliance Navigator</h1>
+      <p>Legal &amp; Compliance Department &middot; Internal use only</p>
+    </div>
+  </div>
+  <div class="card" id="main"></div>
+  <div class="footer">Internal use only &mdash; not for distribution outside B2Prime.<br>For exceptions or escalations contact Legal &amp; Compliance.</div>
+</div>
+<script>
+const MENA_JURS=['bahrain','egypt','jordan','kuwait','lebanon','oman','qatar','saudi arabia','ksa','uae','united arab emirates','algeria','morocco','tunisia'];
+const MENA_BLK=['iran','iraq','libya','yemen','syria','myanmar','north korea'];
+const EU_JURS=['austria','belgium','bulgaria','croatia','cyprus','czech republic','denmark','estonia','finland','france','germany','greece','hungary','ireland','italy','latvia','lithuania','luxembourg','malta','netherlands','poland','portugal','romania','slovakia','slovenia','spain','sweden','cayman islands','hong kong','india','indonesia','kuwait','mauritius','mexico','montenegro','saint vincent','st. vincent','vanuatu','thailand','vietnam'];
+const EU_BLK=['russia','belarus','myanmar','iran','north korea','cuba'];
+const MU_BLK=['afghanistan','antarctica','bouvet','british indian ocean','crimea','cuba','north korea','iran','south sudan','syria','venezuela','west bank','gaza','myanmar','laos'];
+const BH_BLK=['north korea','iran','cuba','myanmar','belarus','central african republic','laos','drc','guinea-bissau','syria','haiti','iraq','lebanon','libya','russia','sudan','yemen'];
+const EN={MENA:'B2B Prime Services MENA (DFSA)',EU:'B2B Prime Services EU (CySEC)',MU:'B2B Prime Services Mauritius (FSC)',Bahamas:'B2B Prime Services Bahamas (SCB)'};
+const PAY={
+  MENA:'FIAT only — Emirates NBD (USD), Amina Bank (EUR).<br><em>No crypto deposits or withdrawals (DFSA prohibition).</em>',
+  EU:'FIAT: Swissquote (EUR/USD), Sepaga EMI (EUR/USD), Unlimit EMI (EUR/USD/GBP), EcommBX (EUR), Bivial (EUR/CHF).<br>Crypto: B2BINPAY El Salvador — currently on hold.',
+  MU:'FIAT: SBM Bank (EUR/USD), Sepaga EMI (EUR/USD), Bivial (EUR/USD/CHF), Harbour &amp; Hills (USD), Delos (EUR), UAB Guru Pay (EUR).<br>Crypto: B2BINPAY El Salvador.',
+  Bahamas:'FIAT: Sepaga EMI (EUR).<br>Crypto: B2BINPAY El Salvador.'
+};
+const FM={MC:'https://drive.google.com/file/d/1WiOYEbznNQ46-oLOQb1xpKMsrwXClFqB/',MP:'https://drive.google.com/file/d/1e3Q1XUNZovGhcjcwbeOjxfNAU2yMcFFB/',EC:'https://drive.google.com/file/d/1BtmvuuDIZUUSUfZQJ2rVj_6SrNOVRO-L/',MC2:'https://drive.google.com/file/d/19dATVrv6EAxIoWrstgU9w5ea2PlLpqOS/',BH:'https://drive.google.com/drive/folders/1V5StE0xwm2XRIG1m1r7OrPeTgJwqbCjH',LO:'https://drive.google.com/file/d/1pmSiiO72rBUxz2LCyK0Y1Q_dpMCN4Prw/'};
+
+// Product definitions: id, icon, label, rules per entity
+// status: 'ok' | 'warn' | 'block', note: string
+const PRODUCTS=[
+  {id:'fx',    ic:'💱',t:'FX CFDs',
+    rules:{MENA:'ok',EU:'ok',MU:'ok',Bahamas:'ok'}},
+  {id:'metals', ic:'🥇',t:'Metals CFDs',
+    rules:{MENA:'ok',EU:'ok',MU:'ok',Bahamas:'ok'}},
+  {id:'indices',ic:'📊',t:'Indices CFDs',
+    rules:{MENA:'ok',EU:'ok',MU:'ok',Bahamas:'ok'}},
+  {id:'energy', ic:'⚡',t:'Energy / Commodities CFDs',
+    rules:{MENA:'ok',EU:'ok',MU:'ok',Bahamas:'ok'}},
+  {id:'equity', ic:'📈',t:'Equity CFDs (shares)',
+    rules:{MENA:'warn',EU:'ok',MU:'ok',Bahamas:'ok'},
+    notes:{MENA:'Not yet implemented under MENA — confirm availability with product team before promising.'}},
+  {id:'ndf',   ic:'🔄',t:'NDFs',
+    rules:{MENA:'ok',EU:'ok',MU:'ok',Bahamas:'ok'}},
+  {id:'crypto_cfd',ic:'₿',t:'Crypto CFDs / Digital assets',
+    rules:{MENA:'block',EU:'ok',MU:'ok',Bahamas:'ok'},
+    notes:{MENA:'Prohibited under MENA (DFSA prohibition).'}},
+  {id:'crypto_spot',ic:'🔗',t:'Crypto spot / Perpetual futures',
+    rules:{MENA:'block',EU:'block',MU:'block',Bahamas:'ok'},
+    notes:{MENA:'Not available — only Bahamas (DARE license) offers crypto spot.',EU:'Not available — only Bahamas (DARE license) offers crypto spot.',MU:'Not available — only Bahamas (DARE license) offers crypto spot.',Bahamas:'Available under Bahamas DARE license.'}},
+  {id:'physical',ic:'🪙',t:'Physical spot products',
+    rules:{MENA:'block',EU:'block',MU:'block',Bahamas:'block'},
+    notes:{MENA:'Not offered by any B2Prime entity.',EU:'Not offered by any B2Prime entity.',MU:'Not offered by any B2Prime entity.',Bahamas:'Not offered by any B2Prime entity.'}},
+  {id:'portfolio',ic:'📁',t:'Portfolio management / Investment advice',
+    rules:{MENA:'block',EU:'block',MU:'block',Bahamas:'block'},
+    notes:{MENA:'Not permitted under any B2Prime entity.',EU:'Not permitted under any B2Prime entity.',MU:'Not permitted under any B2Prime entity.',Bahamas:'Not permitted under any B2Prime entity.'}},
+];
+
+const QS=[
+  {id:'entity',step:1,label:'Step 1 of 4',q:'Which B2Prime entity is handling this client?',sub:'Select the regulated entity you are working under.',type:'opts',opts:[
+    {id:'MENA',ic:'🇦🇪',t:'B2B Prime Services MENA',d:'DFSA regulated — MENA jurisdictions'},
+    {id:'EU',  ic:'🇪🇺',t:'B2B Prime Services EU',  d:'CySEC regulated — EU + select jurisdictions'},
+    {id:'MU',  ic:'🇲🇺',t:'B2B Prime Services Mauritius',d:'FSC regulated — worldwide scope'},
+    {id:'Bahamas',ic:'🇧🇸',t:'B2B Prime Services Bahamas',d:'SCB regulated — worldwide including US retail'},
+  ]},
+  {id:'ct',step:2,label:'Step 2 of 4',q:'What type of client is this?',sub:'Select the category that best describes the prospect.',type:'opts',opts:[
+    {id:'individual',          ic:'👤',t:'Individual (natural person)',             d:'Private individual seeking professional classification'},
+    {id:'corporate_regulated', ic:'🏦',t:'Corporate — regulated financial institution',d:'Bank, broker, fund manager, exchange, insurer, custodian'},
+    {id:'corporate_large',     ic:'🏢',t:'Corporate — large undertaking',           d:'Large company meeting size thresholds (not regulated)'},
+    {id:'corporate_other',     ic:'📋',t:'Corporate — other / unregulated',         d:'Other legal entity, needs full assessment'},
+    {id:'retail',              ic:'👥',t:'Retail client',                           d:'Does not meet professional criteria'},
+  ]},
+  {id:'jur',step:3,label:'Step 3 of 4',q:"What is the client's country of residence or registration?",sub:'Type the country name below.',type:'text',ph:'e.g. Saudi Arabia, Germany, Brazil...'},
+  {id:'prod',step:4,label:'Step 4 of 4',q:'Which products are you looking to offer?',sub:'Select all that apply — you will get a per-product verdict.',type:'multi',opts:PRODUCTS.map(p=>({id:p.id,ic:p.ic,t:p.t,d:''}))},
+];
+
+let ans={},step=0,ms=[],os={};
+function ex(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function ri(dc,text){return`<div class="ri"><div class="rd ${dc}"></div><div class="rt">${text}</div></div>`;}
+function sec(id,title,content,def){
+  os[id]=os[id]!==undefined?os[id]:def;
+  const o=os[id];
+  return`<div class="section"><div class="sec-head" onclick="tog('${id}')"><span class="sec-arr${o?' open':''}" id="sa-${id}">&#9654;</span><span>${title}</span></div><div class="sec-body${o?' open':''}" id="sb-${id}">${content}</div></div>`;
+}
+function tog(id){os[id]=!os[id];const b=document.getElementById('sb-'+id),a=document.getElementById('sa-'+id);if(b)b.className='sec-body'+(os[id]?' open':'');if(a)a.className='sec-arr'+(os[id]?' open':'');}
+function pick(qid,oid){ans[qid]=oid;render();}
+function htxt(v){ans[QS[step].id]=v;const b=document.querySelector('.btn-next');if(b)b.disabled=!ok();}
+function tmul(id){ms.includes(id)?ms=ms.filter(x=>x!==id):ms.push(id);ans.prod=[...ms];render();}
+function ok(){const q=QS[step];if(q.type==='opts')return!!ans[q.id];if(q.type==='text')return!!(ans[q.id]&&ans[q.id].trim().length>1);if(q.type==='multi')return ms.length>0;return false;}
+function nxt(){if(!ok())return;step++;if(step<QS.length){if(QS[step].type==='multi')ms=[...(ans.prod||[])];render();}else showResult();}
+function bck(){step--;render();}
+function rst(){ans={};step=0;ms=[];os={};render();}
+
+function render(){
+  if(step>=QS.length){showResult();return;}
+  const q=QS[step];
+  const pct=Math.round((q.step/4)*100);
+  let h=`<div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div>`;
+  h+=`<div class="step-lbl">${q.label}</div><div class="q">${ex(q.q)}</div><div class="qsub">${ex(q.sub)}</div>`;
+  if(Object.keys(ans).length>0){
+    h+='<div class="crumb-row">';
+    if(ans.entity)h+=`<span class="crumb">${EN[ans.entity]||ans.entity}</span>`;
+    if(ans.ct)h+=`<span class="crumb">${ans.ct.replace(/_/g,' ')}</span>`;
+    if(ans.jur)h+=`<span class="crumb">${ex(ans.jur)}</span>`;
+    h+='</div>';
+  }
+  if(q.type==='opts'){
+    h+='<div class="options">';
+    q.opts.forEach(o=>{const s=ans[q.id]===o.id?' sel':'';h+=`<button class="opt${s}" onclick="pick('${q.id}','${o.id}')"><span class="opt-ic">${o.ic}</span><div><div class="opt-t">${ex(o.t)}</div>${o.d?`<div class="opt-d">${ex(o.d)}</div>`:''}</div></button>`;});
+    h+='</div>';
+  }else if(q.type==='text'){
+    h+=`<input class="txt" id="ti" type="text" placeholder="${ex(q.ph)}" value="${ex(ans[q.id]||'')}" oninput="htxt(this.value)" onkeydown="if(event.key==='Enter')nxt()" autocomplete="off">`;
+  }else if(q.type==='multi'){
+    const cnt=ms.length;
+    h+=`<div class="sel-count">${cnt===0?'Nothing selected yet':cnt===1?'1 product selected':`${cnt} products selected`}</div>`;
+    h+='<div class="options">';
+    q.opts.forEach(o=>{
+      const s=ms.includes(o.id)?' sel':'';
+      // show entity-specific status hint if entity already known
+      let hint='';
+      if(ans.entity){
+        const pd=PRODUCTS.find(p=>p.id===o.id);
+        if(pd){const st=pd.rules[ans.entity];if(st==='block')hint=' 🚫';else if(st==='warn')hint=' ⚠';}
+      }
+      h+=`<button class="opt${s}" onclick="tmul('${o.id}')"><span class="opt-ic">${o.ic}</span><div><div class="opt-t">${ex(o.t)}${hint}</div></div></button>`;
+    });
+    h+='</div>';
+  }
+  h+='<div class="btn-row">';
+  if(step>0)h+=`<button class="btn-back" onclick="bck()">&#8592; Back</button>`;
+  h+=`<button class="btn-next" onclick="nxt()" ${ok()?'':'disabled'}>Continue &#8594;</button>`;
+  h+='</div>';
+  document.getElementById('main').innerHTML=h;
+  if(q.type==='text'){const el=document.getElementById('ti');if(el)el.focus();}
+}
+
+function showResult(){
+  const ent=ans.entity,ct=ans.ct,jur=(ans.jur||'').trim(),prods=ans.prod||[];
+  const jlc=jur.toLowerCase();
+  const issues=[],warnings=[],actions=[];
+  let blocked=false;
+
+  // Client type checks
+  if(ct==='retail'){
+    if(ent==='MENA'||ent==='EU'){issues.push(`Retail clients cannot be onboarded under ${ent==='MENA'?'MENA (DFSA)':'EU (CySEC)'}. Only Professional Clients and Market Counterparties are accepted.`);blocked=true;}
+    else warnings.push('Retail clients are accepted under '+{MU:'Mauritius',Bahamas:'Bahamas'}[ent]+'. Full documentation is still required.');
+  }
+  if(ct==='individual'){
+    if(ent==='MENA'){issues.push('MENA only accepts corporate/legal entity clients. Individual natural persons cannot be onboarded unless classified as Market Counterparty.');blocked=true;}
+    else if(ent==='EU'){warnings.push('Individual professionals (EU): must satisfy at least 2 of — ≥10 significant trades/quarter, portfolio ≥ EUR 500k, ≥1 year professional experience. Written waiver of retail protections is mandatory.');actions.push('Obtain signed elective professional declaration before proceeding.');}
+  }
+  if(ct==='corporate_other'){
+    if(ent==='MENA'||ent==='EU'){warnings.push('Client needs assessment against Professional Client / Market Counterparty criteria. Escalate to Compliance before onboarding.');actions.push('Escalate to Compliance for client categorisation sign-off.');}
+    else{warnings.push(EN[ent]+' can onboard clients without a license if supported by a legal opinion. Documentation must be in place first.');actions.push('Obtain legal opinion document before proceeding.');}
+  }
+  if(ct==='corporate_large'){warnings.push('Large undertaking threshold: Own funds ≥ USD 10M, or Net assets ≥ USD 20M, or Annual net turnover ≥ USD 40M — at least one must be met.');actions.push('Collect and verify financial statements confirming the applicable threshold.');}
+
+  // Jurisdiction checks
+  const isUS=jlc.includes('united states')||jlc==='us'||jlc==='usa'||jlc==='u.s.';
+  if(ent==='MENA'){
+    const inB=MENA_BLK.some(j=>jlc.includes(j));const inO=MENA_JURS.some(j=>jlc.includes(j)||j.includes(jlc));
+    if(inB){issues.push(`${jur} is on the UAE sanctions blacklist — this client cannot be onboarded under MENA (DFSA).`);blocked=true;}
+    else if(!inO){warnings.push(`${jur} is outside the MENA jurisdiction scope communicated to DFSA. Escalate to Compliance before onboarding.`);actions.push('Escalate jurisdiction eligibility to Compliance.');}
+    else actions.push(`${jur} is within the accepted MENA jurisdiction scope.`);
+    if(isUS){issues.push('US persons cannot be onboarded under MENA (DFSA).');blocked=true;}
+  }
+  if(ent==='EU'){
+    const inB=EU_BLK.some(j=>jlc.includes(j));const inO=EU_JURS.some(j=>jlc.includes(j)||j.includes(jlc));
+    if(inB){issues.push(`${jur} is on the EU entity UBO blacklist — this client cannot be onboarded.`);blocked=true;}
+    else if(!inO){warnings.push(`${jur} is not on the EU accepted jurisdictions list. Onboarding not permitted without Compliance approval.`);actions.push('Escalate jurisdiction eligibility to Compliance.');}
+    else actions.push(`${jur} is on the accepted EU jurisdiction list.`);
+    if(isUS&&ct==='individual'){issues.push('Individual US Persons cannot be onboarded under EU (CySEC). A US UBO on a corporate structure is permitted.');blocked=true;}
+    else if(isUS) warnings.push('US UBO on corporate structure is permitted under EU (CySEC) — confirm UBO is not also the individual client.');
+  }
+  if(ent==='MU'){
+    const inB=MU_BLK.some(j=>jlc.includes(j));
+    if(inB){issues.push(`${jur} is blacklisted under Mauritius — this client cannot be onboarded.`);blocked=true;}
+    else actions.push(`${jur} is not on the Mauritius blacklist — jurisdiction accepted.`);
+    if(isUS&&ct==='individual'){issues.push('Individual US Persons cannot be onboarded under Mauritius. US Market Counterparties accepted with CRA + FATCA forms.');blocked=true;}
+    else if(isUS) actions.push('US Market Counterparty accepted under Mauritius — CRA and FATCA forms required.');
+  }
+  if(ent==='Bahamas'){
+    const inB=BH_BLK.some(j=>jlc.includes(j));
+    if(inB){issues.push(`${jur} is blacklisted under Bahamas — this client cannot be onboarded.`);blocked=true;}
+    else actions.push(`${jur} is not on the Bahamas blacklist — jurisdiction accepted.`);
+    if(isUS) actions.push('US clients (including retail) can be onboarded under Bahamas — CRA and FATCA forms required.');
+  }
+
+  // Per-product assessment
+  const prodResults=[]; // {ic, t, status:'ok'|'warn'|'block', note}
+  let anyProdBlock=false, anyProdWarn=false;
+  prods.forEach(pid=>{
+    const p=PRODUCTS.find(x=>x.id===pid);
+    if(!p)return;
+    const st=p.rules[ent]||'ok';
+    const note=(p.notes&&p.notes[ent])||'';
+    prodResults.push({ic:p.ic,t:p.t,status:st,note});
+    if(st==='block'){anyProdBlock=true;blocked=true;}
+    if(st==='warn') anyProdWarn=true;
+  });
+
+  actions.push('Use only corporate @b2prime.com email for all formal communication.');
+  actions.push('Do not send passports or IDs via unofficial channels.');
+  actions.push('Retain all communications — do not delete messages.');
+  actions.push('Escalate all complaints to Compliance immediately. No informal settlements and no admissions of liability without Compliance approval.');
+
+  // Onboarding forms
+  let fh='';
+  if(!blocked){
+    if(ent==='MENA'){
+      fh+=ct==='corporate_regulated'?ri('dg',`Market Counterparty form: <a href="${FM.MC}" target="_blank">Open PDF &#8599;</a>`):ri('dg',`Professionals / Elective Professionals form: <a href="${FM.MP}" target="_blank">Open PDF &#8599;</a>`);
+      fh+=ri('da','Onboarding method: Manual PDF only — no automated onboarding for corporate clients under MENA.');
+    }else if(ent==='EU'){
+      fh+=ct==='individual'?ri('dg','Individual professionals register automatically via <a href="https://www.b2prime.com" target="_blank">www.b2prime.com &#8599;</a>'):ri('dg',`Corporate onboarding form: <a href="${FM.EC}" target="_blank">Open PDF &#8599;</a>`);
+    }else if(ent==='MU'){
+      fh+=ri('dg',`Corporate onboarding form: <a href="${FM.MC2}" target="_blank">Open PDF &#8599;</a>`);
+      if(ct==='corporate_other') fh+=ri('da',`Legal opinion guide (if no license): <a href="${FM.LO}" target="_blank">Open guide &#8599;</a>`);
+    }else if(ent==='Bahamas'){
+      fh+=ri('dg',`Corporate onboarding forms folder: <a href="${FM.BH}" target="_blank">Open folder &#8599;</a>`);
+      if(ct==='corporate_other') fh+=ri('da',`Legal opinion guide (if no license): <a href="${FM.LO}" target="_blank">Open guide &#8599;</a>`);
+    }
+  }
+
+  // Build product grid HTML
+  const statusLabel={ok:'Approved',warn:'Check first',block:'Not permitted'};
+  const statusClass={ok:'ok',warn:'warn',block:'blk'};
+  let prodGridH='<div class="prod-grid">';
+  prodResults.forEach(p=>{
+    const lbl=statusLabel[p.status];const cls=statusClass[p.status];
+    prodGridH+=`<div class="prod-pill ${cls}"><span class="prod-pill-ic">${p.ic}</span><span class="prod-pill-label">${ex(p.t)}</span><span class="prod-pill-badge">${lbl}</span></div>`;
+  });
+  prodGridH+='</div>';
+  // Add notes for warn/block items
+  const noteItems=prodResults.filter(p=>p.note&&(p.status==='warn'||p.status==='block'));
+  if(noteItems.length){
+    prodGridH+='<div class="prod-note">';
+    noteItems.forEach(p=>{prodGridH+=`<div style="margin-bottom:5px"><strong>${ex(p.t)}:</strong> ${ex(p.note)}</div>`;});
+    prodGridH+='</div>';
+  }
+
+  // Verdict colour
+  let vclass='green',vic='✓',vtitle='Clear to proceed',vsub='No blocking issues found. Follow the required actions below before onboarding.';
+  if(blocked){vclass='red';vic='✕';vtitle='Cannot proceed — blocking issue(s) found';vsub='Review issues below. Do not contact the client further until resolved with Compliance.';}
+  else if(warnings.length||anyProdWarn){vclass='amber';vic='!';vtitle='Proceed with caution — review needed';vsub='No hard blocks, but items below must be resolved before onboarding completes.';}
+
+  // Summary counts for section headers
+  const blockedProdCount=prodResults.filter(p=>p.status==='block').length;
+  const okProdCount=prodResults.filter(p=>p.status==='ok').length;
+  const warnProdCount=prodResults.filter(p=>p.status==='warn').length;
+  let prodSecTitle=`Products (${prodResults.length} selected`;
+  if(blockedProdCount>0) prodSecTitle+=` &middot; ${blockedProdCount} blocked`;
+  if(warnProdCount>0) prodSecTitle+=` &middot; ${warnProdCount} flagged`;
+  if(okProdCount===prodResults.length) prodSecTitle+=` &middot; all approved`;
+  prodSecTitle+=')';
+
+  let html='<div class="ranim">';
+  html+=`<div class="step-lbl">Assessment complete</div>`;
+  html+=`<div class="verdict ${vclass}"><div class="vi">${vic}</div><div><div class="vt">${vtitle}</div><div class="vs">${vsub}</div></div></div>`;
+  html+=`<div class="crumb-row"><span class="crumb">${ex(EN[ent])}</span><span class="crumb">${ex((ct||'').replace(/_/g,' '))}</span><span class="crumb">${ex(jur)}</span></div>`;
+
+  if(issues.length) html+=sec('iss',`&#9940; Blocking issues (${issues.length})`,issues.map(i=>ri('dr',ex(i))).join(''),true);
+  if(warnings.length) html+=sec('wrn',`&#9888; Warnings &amp; escalations (${warnings.length})`,warnings.map(w=>ri('da',ex(w))).join(''),true);
+
+  // Product breakdown always shown
+  html+=sec('prd',prodSecTitle,prodGridH,true);
+
+  if(fh) html+=sec('frm','Onboarding forms &amp; process',fh,!blocked);
+  html+=sec('pay','Payment methods',ri('dg',PAY[ent])+ri('da','Do not promise currencies or banks not listed above without contacting treasury first.'),false);
+  html+=sec('act','Required actions',actions.map(a=>ri('dg',ex(a))).join(''),!blocked);
+  html+=sec('trd','Trading parameters',ri('dg','Margin, stop-out, and leverage levels published per client type on <a href="https://www.b2prime.com" target="_blank">www.b2prime.com &#8599;</a>.')+ri('da','Do not promise different levels without sign-off from John Murillo or Aleksei Tsepaev.'),false);
+  html+=`<button class="btn-restart" onclick="rst()">&#8592; Start a new assessment</button>`;
+  html+='</div>';
+  document.getElementById('main').innerHTML=html;
+}
+
+render();
+</script>
+</body>
+</html>
